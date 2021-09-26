@@ -25,6 +25,21 @@ fn main() -> anyhow::Result<()> {
             binding.name()?,
             binding.port_type()?.name()?
         );
+
+        for operation in binding.operations() {
+            println!("  {}: {}", operation.name()?, match operation.transport_operation()? {
+                wsdl::WsBindingTransportOperation::Soap(action) => {
+                    action
+                }
+                wsdl::WsBindingTransportOperation::Soap12(action) => {
+                    action
+                }
+                wsdl::WsBindingTransportOperation::Http(location) => {
+                    location
+                }
+                // _ => ""
+            });
+        }
     }
 
     for port_type in wsdl.port_types()? {

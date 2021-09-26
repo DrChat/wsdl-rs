@@ -9,12 +9,16 @@ pub enum WsErrorMalformedType {
     MissingAttribute(String),
     #[error("missing element \"{0}\"")]
     MissingElement(String),
+    #[error("missing XML namespace")]
+    MissingNamespace,
 }
 
 #[derive(Error, Debug)]
 pub enum WsErrorType {
     #[error("The input WSDL document was malformed: {0}")]
     MalformedWsdl(WsErrorMalformedType),
+    #[error("Element has unknown namespace {0}")]
+    InvalidNamespace(String),
     #[error("Attempt to refer to unknown element {0}")]
     InvalidReference(String),
 }
@@ -257,6 +261,9 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
 
 /// A WSDL binding that describes how the operations in a port type
 /// are bound to/from the wire.
+///
+/// For example, for an HTTP transport, this would contain the request
+/// verb (GET/POST).
 pub struct WsBinding<'a, 'input>(Node<'a, 'input>);
 
 impl<'a, 'input> WsBinding<'a, 'input> {
@@ -285,6 +292,101 @@ impl<'a, 'input> WsBinding<'a, 'input> {
                 WsErrorType::InvalidReference(port_name.to_string()),
             ))
     }
+
+    pub fn operations(&self) -> impl Iterator<Item = WsBindingOperation> {
+        self.0
+            .children()
+            .filter(|n| n.has_tag_name("operation"))
+            .map(|n| WsBindingOperation(n))
+    }
+}
+
+/// A WSDL binding for an operation corresponding to our [WsBinding]'s associated [WsPortType].
+///
+/// This describes how to call this operation over the transport. For example, for SOAP,
+/// this would contain the specific value of the `SOAPAction` HTTP header that is paired
+/// with the request.
+pub struct WsBindingOperation<'a, 'input>(Node<'a, 'input>);
+
+impl<'a, 'input> WsBindingOperation<'a, 'input> {
+    /// Retrieve the name of the operation.
+    pub fn name(&self) -> Result<&'a str> {
+        self.0.attribute("name").ok_or(WsError::new(
+            self.0,
+            WsErrorType::MalformedWsdl(WsErrorMalformedType::MissingAttribute("name".to_string())),
+        ))
+    }
+
+    /// Retrieve the transport information for this operation.
+    pub fn transport_operation(&self) -> Result<WsBindingTransportOperation<'a>> {
+        let operation = self
+            .0
+            .children()
+            .find(|n| n.has_tag_name("operation"))
+            .ok_or(WsError::new(
+                self.0,
+                WsErrorType::MalformedWsdl(WsErrorMalformedType::MissingElement(
+                    "operation".to_string(),
+                )),
+            ))?;
+
+        match operation.tag_name().namespace().ok_or(WsError::new(
+            operation,
+            WsErrorType::MalformedWsdl(WsErrorMalformedType::MissingNamespace),
+        ))? {
+            "http://schemas.xmlsoap.org/wsdl/soap/" => {
+                let action = operation.attribute("soapAction").ok_or(WsError::new(
+                    operation,
+                    WsErrorType::MalformedWsdl(WsErrorMalformedType::MissingAttribute(
+                        "soapAction".to_string(),
+                    )),
+                ))?;
+
+                Ok(WsBindingTransportOperation::Soap(action))
+            }
+
+            "http://schemas.xmlsoap.org/wsdl/soap12/" => {
+                let action = operation.attribute("soapAction").ok_or(WsError::new(
+                    operation,
+                    WsErrorType::MalformedWsdl(WsErrorMalformedType::MissingAttribute(
+                        "soapAction".to_string(),
+                    )),
+                ))?;
+
+                Ok(WsBindingTransportOperation::Soap12(action))
+            }
+
+            "http://schemas.xmlsoap.org/wsdl/http/" => {
+                let location = operation.attribute("location").ok_or(WsError::new(
+                    operation,
+                    WsErrorType::MalformedWsdl(WsErrorMalformedType::MissingAttribute(
+                        "location".to_string(),
+                    )),
+                ))?;
+
+                Ok(WsBindingTransportOperation::Http(location))
+            }
+
+            ns => {
+                return Err(WsError::new(
+                    operation,
+                    WsErrorType::InvalidNamespace(ns.to_string()),
+                ));
+            }
+        }
+    }
+}
+
+/// This enum describes the specific transport fields associated with this operation.
+///
+/// For example, for SOAP,
+pub enum WsBindingTransportOperation<'a> {
+    /// This contains the value of the `SOAPAction` HTTP header, e.g. `http://ws.cdyne.com/WeatherWS/GetCityWeatherByZIP`
+    Soap(&'a str),
+    /// This contains the value of the `SOAPAction` HTTP header, e.g. `http://ws.cdyne.com/WeatherWS/GetCityWeatherByZIP`
+    Soap12(&'a str),
+    /// This contains the relative HTTP path, e.g. `/GetWeatherInformation`
+    Http(&'a str),
 }
 
 pub struct WsServicePort<'a, 'input>(Node<'a, 'input>);
