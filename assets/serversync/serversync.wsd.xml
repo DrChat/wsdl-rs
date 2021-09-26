@@ -1,0 +1,715 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:s="http://www.w3.org/2001/XMLSchema"
+  xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+  xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+  xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+  xmlns:tns="http://www.microsoft.com/SoftwareDistribution"
+  xmlns:s2="http://www.microsoft.com/SoftwareDistribution/Server/IMonitorable"
+  xmlns:s1="http://microsoft.com/wsdl/types/"
+  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/"
+  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" targetNamespace="http://www.microsoft.com/SoftwareDistribution"
+  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://www.microsoft.com/SoftwareDistribution">
+      <s:import namespace="http://microsoft.com/wsdl/types/" />
+      <s:element name="GetAuthConfig">
+        <s:complexType />
+      </s:element>
+      <s:element name="GetAuthConfigResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetAuthConfigResult" type="tns:ServerAuthConfig" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ServerAuthConfig">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="LastChange" type="s:dateTime" />
+          <s:element minOccurs="0" maxOccurs="1" name="AuthInfo" type="tns:ArrayOfAuthPlugInInfo" />
+          <s:element minOccurs="0" maxOccurs="1" name="AllowedEventIds" type="tns:ArrayOfInt" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfAuthPlugInInfo">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="AuthPlugInInfo" nillable="true" type="tns:AuthPlugInInfo" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="AuthPlugInInfo">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="PlugInID" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ServiceUrl" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Parameter" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfInt">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="int" type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetCookie">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="authCookies" type="tns:ArrayOfAuthorizationCookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="oldCookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="protocolVersion" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfAuthorizationCookie">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="AuthorizationCookie" nillable="true" type="tns:AuthorizationCookie" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="AuthorizationCookie">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="PlugInId" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="CookieData" type="s:base64Binary" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="Cookie">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="Expiration" type="s:dateTime" />
+          <s:element minOccurs="0" maxOccurs="1" name="EncryptedData" type="s:base64Binary" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetCookieResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetCookieResult" type="tns:Cookie" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetConfigData">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="configAnchor" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetConfigDataResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetConfigDataResult" type="tns:ServerSyncConfigData" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ServerSyncConfigData">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="CatalogOnlySync" type="s:boolean" />
+          <s:element minOccurs="1" maxOccurs="1" name="LazySync" type="s:boolean" />
+          <s:element minOccurs="1" maxOccurs="1" name="ServerHostsPsfFiles" type="s:boolean" />
+          <s:element minOccurs="1" maxOccurs="1" name="MaxNumberOfComputerIdsInRequest" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="MaxNumberOfDriverSetsPerRequest" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="MaxNumberOfPnpHardwareIdsInRequest" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="MaxNumberOfUpdatesPerRequest" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="NewConfigAnchor" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ProtocolVersion" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="LanguageUpdateList" type="tns:ArrayOfServerSyncLanguageData" />
+          <s:element minOccurs="1" maxOccurs="1" name="MaxUpdatesPerRequestInGetUpdateDecryptionData" type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfServerSyncLanguageData">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="ServerSyncLanguageData" nillable="true" type="tns:ServerSyncLanguageData" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ServerSyncLanguageData">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="LanguageID" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="ShortLanguage" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="LongLanguage" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="Enabled" type="s:boolean" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetRevisionIdList">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="filter" type="tns:ServerSyncFilter" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ServerSyncFilter">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="DssProtocolVersion" type="tns:Version" />
+          <s:element minOccurs="0" maxOccurs="1" name="Anchor" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="GetConfig" type="s:boolean" />
+          <s:element minOccurs="1" maxOccurs="1" name="Get63LanguageOnly" type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="Categories" type="tns:ArrayOfIdAndDelta" />
+          <s:element minOccurs="0" maxOccurs="1" name="Classifications" type="tns:ArrayOfIdAndDelta" />
+          <s:element minOccurs="0" maxOccurs="1" name="Languages" type="tns:ArrayOfLanguageAndDelta" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="Version" />
+      <s:complexType name="ArrayOfIdAndDelta">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="IdAndDelta" nillable="true" type="tns:IdAndDelta" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="IdAndDelta">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="Id" type="s1:guid" />
+          <s:element minOccurs="1" maxOccurs="1" name="Delta" type="s:boolean" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfLanguageAndDelta">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="LanguageAndDelta" nillable="true" type="tns:LanguageAndDelta" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="LanguageAndDelta">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="Id" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="Delta" type="s:boolean" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetRevisionIdListResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetRevisionIdListResult" type="tns:RevisionIdList" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="RevisionIdList">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Anchor" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="NewRevisions" type="tns:ArrayOfUpdateIdentity" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfUpdateIdentity">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="UpdateIdentity" nillable="true" type="tns:UpdateIdentity" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="UpdateIdentity">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="UpdateID" type="s1:guid" />
+          <s:element minOccurs="1" maxOccurs="1" name="RevisionNumber" type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetUpdateData">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="updateIds" type="tns:ArrayOfUpdateIdentity" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetUpdateDataResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetUpdateDataResult" type="tns:ServerUpdateData" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ServerUpdateData">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="updates" type="tns:ArrayOfServerSyncUpdateData" />
+          <s:element minOccurs="0" maxOccurs="1" name="fileUrls" type="tns:ArrayOfServerSyncUrlData" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfServerSyncUpdateData">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="ServerSyncUpdateData" nillable="true" type="tns:ServerSyncUpdateData" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ServerSyncUpdateData">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Id" type="tns:UpdateIdentity" />
+          <s:element minOccurs="0" maxOccurs="1" name="XmlUpdateBlob" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="FileDigestList" type="tns:ArrayOfBase64Binary" />
+          <s:element minOccurs="0" maxOccurs="1" name="XmlUpdateBlobCompressed" type="s:base64Binary" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfBase64Binary">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="base64Binary" nillable="true" type="s:base64Binary" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfServerSyncUrlData">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="ServerSyncUrlData" nillable="true" type="tns:ServerSyncUrlData" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ServerSyncUrlData">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="FileDigest" type="s:base64Binary" />
+          <s:element minOccurs="0" maxOccurs="1" name="MUUrl" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="UssUrl" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="DecryptionKey" type="s:base64Binary" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetUpdateDecryptionData">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="updateIds" type="tns:ArrayOfUpdateIdentity" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetUpdateDecryptionDataResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetUpdateDecryptionDataResult" type="tns:ServerDecryptionData" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ServerDecryptionData">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="UpdateFileDecryptionData" type="tns:ArrayOfServerSyncUpdateFileDecryption" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfServerSyncUpdateFileDecryption">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="ServerSyncUpdateFileDecryption" nillable="true" type="tns:ServerSyncUpdateFileDecryption" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ServerSyncUpdateFileDecryption">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="UpdateId" type="tns:UpdateIdentity" />
+          <s:element minOccurs="0" maxOccurs="1" name="FileDecryptionData" type="tns:ArrayOfServerSyncFileDecryption" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfServerSyncFileDecryption">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="ServerSyncFileDecryption" nillable="true" type="tns:ServerSyncFileDecryption" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ServerSyncFileDecryption">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="FileDigest" type="s:base64Binary" />
+          <s:element minOccurs="0" maxOccurs="1" name="DecryptionKey" type="s:base64Binary" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="DownloadFiles">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="fileDigestList" type="tns:ArrayOfBase64Binary" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="DownloadFilesResponse">
+        <s:complexType />
+      </s:element>
+      <s:element name="GetDeployments">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="deploymentAnchor" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="syncAnchor" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetDeploymentsResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetDeploymentsResult" type="tns:ServerSyncDeploymentResult" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ServerSyncDeploymentResult">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Anchor" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Groups" type="tns:ArrayOfServerSyncTargetGroup" />
+          <s:element minOccurs="0" maxOccurs="1" name="Deployments" type="tns:ArrayOfServerSyncDeployment" />
+          <s:element minOccurs="0" maxOccurs="1" name="DeadDeployments" type="tns:ArrayOfGuid" />
+          <s:element minOccurs="0" maxOccurs="1" name="HiddenUpdates" type="tns:ArrayOfGuid" />
+          <s:element minOccurs="0" maxOccurs="1" name="AcceptedEulas" type="tns:ArrayOfGuid" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfServerSyncTargetGroup">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="ServerSyncTargetGroup" nillable="true" type="tns:ServerSyncTargetGroup" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ServerSyncTargetGroup">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="TargetGroupID" type="s1:guid" />
+          <s:element minOccurs="1" maxOccurs="1" name="ParentGroupId" type="s1:guid" />
+          <s:element minOccurs="0" maxOccurs="1" name="Name" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="IsBuiltin" type="s:boolean" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfServerSyncDeployment">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="ServerSyncDeployment" nillable="true" type="tns:ServerSyncDeployment" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ServerSyncDeployment">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="UpdateId" type="s1:guid" />
+          <s:element minOccurs="1" maxOccurs="1" name="RevisionNumber" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="Action" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="AdminName" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="Deadline" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="IsAssigned" type="s:boolean" />
+          <s:element minOccurs="1" maxOccurs="1" name="GoLiveTime" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="DeploymentGuid" type="s1:guid" />
+          <s:element minOccurs="1" maxOccurs="1" name="TargetGroupId" type="s1:guid" />
+          <s:element minOccurs="1" maxOccurs="1" name="DownloadPriority" type="s:unsignedByte" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfGuid">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="guid" type="s1:guid" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetRelatedRevisionsForUpdates">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="updateIDs" type="tns:ArrayOfGuid" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetRelatedRevisionsForUpdatesResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetRelatedRevisionsForUpdatesResult" type="tns:ArrayOfUpdateIdentity" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+    </s:schema>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://microsoft.com/wsdl/types/">
+      <s:simpleType name="guid">
+        <s:restriction base="s:string">
+          <s:pattern value="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" />
+        </s:restriction>
+      </s:simpleType>
+    </s:schema>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://www.microsoft.com/SoftwareDistribution/Server/IMonitorable">
+      <s:element name="Ping">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="pingLevel" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="PingResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="PingResult" type="s2:MonitoredServicesResponse" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="MonitoredServicesResponse">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="SuccessFlag" type="s:boolean" />
+          <s:element minOccurs="1" maxOccurs="1" name="ServicesTime" type="s:dateTime" />
+          <s:element minOccurs="0" maxOccurs="1" name="ServicesName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ServicesMachine" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="IsHttps" type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="RequestContentType" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ConfigFilePath" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ConfigFileProjectName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ConfigFileEnvironmentName" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="ConfigFileLastModifiedTime" type="s:dateTime" />
+          <s:element minOccurs="0" maxOccurs="1" name="ConfigFileVersion" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="ConfigFileNextExpirationTime" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="ConfigFileExpirationModuloInMinutes" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="DatabaseInfo" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="CustomInfo" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="GetAuthConfigSoapIn">
+    <wsdl:part name="parameters" element="tns:GetAuthConfig" />
+  </wsdl:message>
+  <wsdl:message name="GetAuthConfigSoapOut">
+    <wsdl:part name="parameters" element="tns:GetAuthConfigResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetCookieSoapIn">
+    <wsdl:part name="parameters" element="tns:GetCookie" />
+  </wsdl:message>
+  <wsdl:message name="GetCookieSoapOut">
+    <wsdl:part name="parameters" element="tns:GetCookieResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetConfigDataSoapIn">
+    <wsdl:part name="parameters" element="tns:GetConfigData" />
+  </wsdl:message>
+  <wsdl:message name="GetConfigDataSoapOut">
+    <wsdl:part name="parameters" element="tns:GetConfigDataResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetRevisionIdListSoapIn">
+    <wsdl:part name="parameters" element="tns:GetRevisionIdList" />
+  </wsdl:message>
+  <wsdl:message name="GetRevisionIdListSoapOut">
+    <wsdl:part name="parameters" element="tns:GetRevisionIdListResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetUpdateDataSoapIn">
+    <wsdl:part name="parameters" element="tns:GetUpdateData" />
+  </wsdl:message>
+  <wsdl:message name="GetUpdateDataSoapOut">
+    <wsdl:part name="parameters" element="tns:GetUpdateDataResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetUpdateDecryptionDataSoapIn">
+    <wsdl:part name="parameters" element="tns:GetUpdateDecryptionData" />
+  </wsdl:message>
+  <wsdl:message name="GetUpdateDecryptionDataSoapOut">
+    <wsdl:part name="parameters" element="tns:GetUpdateDecryptionDataResponse" />
+  </wsdl:message>
+  <wsdl:message name="DownloadFilesSoapIn">
+    <wsdl:part name="parameters" element="tns:DownloadFiles" />
+  </wsdl:message>
+  <wsdl:message name="DownloadFilesSoapOut">
+    <wsdl:part name="parameters" element="tns:DownloadFilesResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetDeploymentsSoapIn">
+    <wsdl:part name="parameters" element="tns:GetDeployments" />
+  </wsdl:message>
+  <wsdl:message name="GetDeploymentsSoapOut">
+    <wsdl:part name="parameters" element="tns:GetDeploymentsResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetRelatedRevisionsForUpdatesSoapIn">
+    <wsdl:part name="parameters" element="tns:GetRelatedRevisionsForUpdates" />
+  </wsdl:message>
+  <wsdl:message name="GetRelatedRevisionsForUpdatesSoapOut">
+    <wsdl:part name="parameters" element="tns:GetRelatedRevisionsForUpdatesResponse" />
+  </wsdl:message>
+  <wsdl:message name="PingSoapIn">
+    <wsdl:part name="parameters" element="s2:Ping" />
+  </wsdl:message>
+  <wsdl:message name="PingSoapOut">
+    <wsdl:part name="parameters" element="s2:PingResponse" />
+  </wsdl:message>
+  <wsdl:portType name="ServerSyncProxySoap">
+    <wsdl:operation name="GetAuthConfig">
+      <wsdl:input message="tns:GetAuthConfigSoapIn" />
+      <wsdl:output message="tns:GetAuthConfigSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetCookie">
+      <wsdl:input message="tns:GetCookieSoapIn" />
+      <wsdl:output message="tns:GetCookieSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetConfigData">
+      <wsdl:input message="tns:GetConfigDataSoapIn" />
+      <wsdl:output message="tns:GetConfigDataSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetRevisionIdList">
+      <wsdl:input message="tns:GetRevisionIdListSoapIn" />
+      <wsdl:output message="tns:GetRevisionIdListSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetUpdateData">
+      <wsdl:input message="tns:GetUpdateDataSoapIn" />
+      <wsdl:output message="tns:GetUpdateDataSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetUpdateDecryptionData">
+      <wsdl:input message="tns:GetUpdateDecryptionDataSoapIn" />
+      <wsdl:output message="tns:GetUpdateDecryptionDataSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="DownloadFiles">
+      <wsdl:input message="tns:DownloadFilesSoapIn" />
+      <wsdl:output message="tns:DownloadFilesSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDeployments">
+      <wsdl:input message="tns:GetDeploymentsSoapIn" />
+      <wsdl:output message="tns:GetDeploymentsSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetRelatedRevisionsForUpdates">
+      <wsdl:input message="tns:GetRelatedRevisionsForUpdatesSoapIn" />
+      <wsdl:output message="tns:GetRelatedRevisionsForUpdatesSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Ping">
+      <wsdl:input message="tns:PingSoapIn" />
+      <wsdl:output message="tns:PingSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="ServerSyncProxySoap" type="tns:ServerSyncProxySoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetAuthConfig">
+      <soap:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetAuthConfig" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetCookie">
+      <soap:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetCookie" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetConfigData">
+      <soap:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetConfigData" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetRevisionIdList">
+      <soap:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetRevisionIdList" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetUpdateData">
+      <soap:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetUpdateData" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetUpdateDecryptionData">
+      <soap:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetUpdateDecryptionData" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="DownloadFiles">
+      <soap:operation soapAction="http://www.microsoft.com/SoftwareDistribution/DownloadFiles" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDeployments">
+      <soap:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetDeployments" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetRelatedRevisionsForUpdates">
+      <soap:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetRelatedRevisionsForUpdates" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Ping">
+      <soap:operation soapAction="http://www.microsoft.com/SoftwareDistribution/Server/IMonitorable/Ping" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="ServerSyncProxySoap12" type="tns:ServerSyncProxySoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetAuthConfig">
+      <soap12:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetAuthConfig" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetCookie">
+      <soap12:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetCookie" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetConfigData">
+      <soap12:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetConfigData" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetRevisionIdList">
+      <soap12:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetRevisionIdList" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetUpdateData">
+      <soap12:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetUpdateData" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetUpdateDecryptionData">
+      <soap12:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetUpdateDecryptionData" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="DownloadFiles">
+      <soap12:operation soapAction="http://www.microsoft.com/SoftwareDistribution/DownloadFiles" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDeployments">
+      <soap12:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetDeployments" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetRelatedRevisionsForUpdates">
+      <soap12:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetRelatedRevisionsForUpdates" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Ping">
+      <soap12:operation soapAction="http://www.microsoft.com/SoftwareDistribution/Server/IMonitorable/Ping" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="ServerSyncProxy">
+    <wsdl:port name="ServerSyncProxySoap" binding="tns:ServerSyncProxySoap">
+      <soap:address location="http://localhost/serversyncwebservice/ServerSyncProxy.asmx" />
+    </wsdl:port>
+    <wsdl:port name="ServerSyncProxySoap12" binding="tns:ServerSyncProxySoap12">
+      <soap12:address location="http://localhost/serversyncwebservice/ServerSyncProxy.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
