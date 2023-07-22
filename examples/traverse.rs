@@ -1,15 +1,15 @@
-use clap::{App, Arg};
+use clap::{Arg, Command};
 use wsdl::Wsdl;
 
 fn main() -> anyhow::Result<()> {
-    let matches = App::new("WSDL tree traversal example")
-        .args(&[Arg::with_name("input")
-            .takes_value(true)
+    let matches = Command::new("WSDL tree traversal example")
+        .args(&[Arg::new("input")
+            .num_args(1)
             .required(true)
             .help("Input wsdl file")])
         .get_matches();
 
-    let input = matches.value_of("input").unwrap();
+    let input = matches.get_one::<String>("input").unwrap();
 
     let input = std::fs::read_to_string(&input)?;
     let document = roxmltree::Document::parse(&input)?;
