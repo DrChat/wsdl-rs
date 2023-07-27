@@ -38,7 +38,14 @@ fn main() -> anyhow::Result<()> {
                     let mut s = String::new();
 
                     for part in input.parts() {
-                        s.push_str(&format!("{}: {}", part.name()?, part.typename()?));
+                        let tn = part.typename()?;
+                        let tn = if let Some(ns) = tn.namespace() {
+                            format!("`{}:{}`", ns, tn.name())
+                        } else {
+                            format!("{}", tn.name())
+                        };
+
+                        s.push_str(&format!("{}: {}", part.name()?, tn));
                     }
 
                     s
@@ -51,7 +58,12 @@ fn main() -> anyhow::Result<()> {
                         operation.name().unwrap()
                     ))?;
 
-                    part.typename()?.to_string()
+                    let tn = part.typename()?;
+                    if let Some(ns) = tn.namespace() {
+                        format!("`{}:{}`", ns, tn.name())
+                    } else {
+                        format!("{}", tn.name())
+                    }
                 } else {
                     "()".to_string()
                 }

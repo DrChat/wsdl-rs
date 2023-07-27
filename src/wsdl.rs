@@ -1,4 +1,4 @@
-use roxmltree::{Document, Node, NodeId};
+use roxmltree::{Document, ExpandedName, Node, NodeId};
 use thiserror::Error;
 
 type Result<'a, 'input, T> = std::result::Result<T, WsError>;
@@ -53,6 +53,31 @@ fn target_namespace<'a, 'input>(node: Node<'a, 'input>) -> Result<'a, 'input, &'
             "targetNamespace".to_string(),
         )),
     ))
+}
+
+fn resolve_qualified<'a, 'input: 'a>(
+    node: Node<'a, 'input>,
+    qualified_name: &'a str,
+) -> std::result::Result<ExpandedName<'a, 'a>, WsErrorType> {
+    if qualified_name.contains(":") {
+        let mut s = qualified_name.split(":");
+
+        let ns = s
+            .next()
+            .ok_or(WsErrorType::InvalidReference(qualified_name.to_string()))?;
+
+        let uri = node
+            .lookup_namespace_uri(Some(ns))
+            .ok_or(WsErrorType::InvalidReference(qualified_name.to_string()))?;
+
+        let name = s
+            .next()
+            .ok_or(WsErrorType::InvalidReference(qualified_name.to_string()))?;
+
+        Ok((uri, name).into())
+    } else {
+        Ok(qualified_name.into())
+    }
 }
 
 fn split_qualified(qualified_name: &str) -> std::result::Result<(Option<&str>, &str), WsErrorType> {
@@ -121,7 +146,7 @@ impl<'a, 'input> WsMessage<'a, 'input> {
 #[derive(Debug, Clone)]
 pub struct WsMessagePart<'a, 'input>(Node<'a, 'input>);
 
-impl<'a, 'input> WsMessagePart<'a, 'input> {
+impl<'a, 'input: 'a> WsMessagePart<'a, 'input> {
     /// Retrieve the name of the part.
     pub fn name(&self) -> Result<&'a str> {
         self.0.attribute("name").ok_or(WsError::new(
@@ -132,8 +157,9 @@ impl<'a, 'input> WsMessagePart<'a, 'input> {
 
     /// Retrieve the typename of this parameter. This refers to a type defined
     /// under the `wsdl:types` XML node.
-    pub fn typename(&self) -> Result<&'a str> {
-        self.0
+    pub fn typename(&self) -> Result<ExpandedName<'a, 'a>> {
+        let typename = self
+            .0
             .attribute("element")
             .or(self.0.attribute("type"))
             .ok_or(WsError::new(
@@ -141,7 +167,9 @@ impl<'a, 'input> WsMessagePart<'a, 'input> {
                 WsErrorType::MalformedWsdl(WsErrorMalformedType::MissingAttribute(
                     "type".to_string(),
                 )),
-            ))
+            ))?;
+
+        resolve_qualified(self.0, typename).map_err(|e| WsError::new(self.0, e))
     }
 
     /// Return the XML node this struct is associated with
