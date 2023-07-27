@@ -17,6 +17,8 @@ pub enum WsErrorType {
     MalformedWsdl(WsErrorMalformedType),
     #[error("Attempt to refer to unknown element {0}")]
     InvalidReference(String),
+    #[error("Node unexpectedly did not have a parent node")]
+    NoParentNode,
 }
 
 #[derive(Error, Debug)]
@@ -36,10 +38,13 @@ impl std::fmt::Display for WsError {
 
 fn target_namespace<'a, 'input>(node: Node<'a, 'input>) -> Result<'a, 'input, &'a str> {
     // Traverse the parents until we find the targetNamespace attribute.
-    while let Some(parent) = node.parent() {
+    let mut nparent = node.parent();
+    while let Some(parent) = nparent {
         if let Some(ns) = parent.attribute("targetNamespace") {
             return Ok(ns);
         }
+
+        nparent = parent.parent();
     }
 
     Err(WsError::new(
@@ -85,6 +90,7 @@ fn lookup_qualified<'a, 'input>(
 
 /// Describes a WSDL `message`. These can otherwise be described as
 /// a list of function parameters.
+#[derive(Debug, Clone)]
 pub struct WsMessage<'a, 'input>(Node<'a, 'input>);
 
 impl<'a, 'input> WsMessage<'a, 'input> {
@@ -100,13 +106,19 @@ impl<'a, 'input> WsMessage<'a, 'input> {
     pub fn parts(&self) -> impl Iterator<Item = WsMessagePart> {
         self.0
             .children()
-            .filter(|n| n.has_tag_name("part"))
+            .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "part")))
             .map(|n| WsMessagePart(n))
+    }
+
+    /// Return the XML node this struct is associated with
+    pub fn node(&self) -> Node<'a, 'input> {
+        self.0
     }
 }
 
 /// Describes a part of a WSDL message. This can otherwise be described
 /// as an individual function parameter.
+#[derive(Debug, Clone)]
 pub struct WsMessagePart<'a, 'input>(Node<'a, 'input>);
 
 impl<'a, 'input> WsMessagePart<'a, 'input> {
@@ -131,9 +143,15 @@ impl<'a, 'input> WsMessagePart<'a, 'input> {
                 )),
             ))
     }
+
+    /// Return the XML node this struct is associated with
+    pub fn node(&self) -> Node<'a, 'input> {
+        self.0
+    }
 }
 
 /// Describes a WSDL `portType`. These describe groups of operations.
+#[derive(Debug, Clone)]
 pub struct WsPortType<'a, 'input>(Node<'a, 'input>);
 
 impl<'a, 'input> WsPortType<'a, 'input> {
@@ -151,17 +169,23 @@ impl<'a, 'input> WsPortType<'a, 'input> {
     }
 
     /// Retrieve the operations associated with this port.
-    pub fn operations(&self) -> Result<impl Iterator<Item = WsPortOperation>> {
+    pub fn operations(&self) -> Result<impl Iterator<Item = WsPortOperation<'a, 'input>>> {
         Ok(self
             .0
             .children()
-            .filter(|n| n.has_tag_name("operation"))
+            .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "operation")))
             .map(|n| WsPortOperation(n)))
+    }
+
+    /// Return the XML node this struct is associated with
+    pub fn node(&self) -> Node<'a, 'input> {
+        self.0
     }
 }
 
 /// Describes an operation associated with a WSDL `portType`.
 /// A WSDL operation can otherwise be described as a function.
+#[derive(Debug, Clone)]
 pub struct WsPortOperation<'a, 'input>(Node<'a, 'input>);
 
 impl<'a, 'input> WsPortOperation<'a, 'input> {
@@ -178,7 +202,7 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
         let message_typename = match self
             .0
             .children()
-            .find(|n| n.has_tag_name("input"))
+            .find(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "input")))
             .map(|n| n.attribute("message"))
             .flatten()
         {
@@ -205,7 +229,7 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
         let message_typename = match self
             .0
             .children()
-            .find(|n| n.has_tag_name("output"))
+            .find(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "output")))
             .map(|n| n.attribute("message"))
             .flatten()
         {
@@ -232,7 +256,7 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
         let message_typename = match self
             .0
             .children()
-            .find(|n| n.has_tag_name("fault"))
+            .find(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "fault")))
             .map(|n| n.attribute("message"))
             .flatten()
         {
@@ -253,10 +277,55 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
                 ))?,
         ))
     }
+
+    /// Return the XML node this struct is associated with
+    pub fn node(&self) -> Node<'a, 'input> {
+        self.0
+    }
+}
+
+/// A WSDL binding operation.
+#[derive(Debug, Clone)]
+pub struct WsBindingOperation<'a, 'input>(Node<'a, 'input>);
+
+impl<'a, 'input> WsBindingOperation<'a, 'input> {
+    /// Return the name of the operation described.
+    pub fn name(&self) -> Result<&'a str> {
+        self.0.attribute("name").ok_or(WsError::new(
+            self.0,
+            WsErrorType::MalformedWsdl(WsErrorMalformedType::MissingAttribute("name".to_string())),
+        ))
+    }
+
+    /// Retrieve the port operation that corresponds to this binding operation.
+    pub fn port_operation(&self) -> Result<WsPortOperation<'a, 'input>> {
+        let name = self.name()?;
+        let binding = WsBinding(
+            self.0
+                .parent()
+                .ok_or(WsError::new(self.0, WsErrorType::NoParentNode))?,
+        );
+
+        let port_type: WsPortType<'a, 'input> = binding.port_type()?;
+        let mut operations = port_type.operations()?;
+
+        operations
+            .try_find(|o| Ok(o.name()? == name))?
+            .ok_or(WsError::new(
+                self.0,
+                WsErrorType::MalformedWsdl(WsErrorMalformedType::MissingElement(name.to_string())),
+            ))
+    }
+
+    /// Return the XML node this struct is associated with
+    pub fn node(&self) -> Node<'a, 'input> {
+        self.0
+    }
 }
 
 /// A WSDL binding that describes how the operations in a port type
 /// are bound to/from the wire.
+#[derive(Debug, Clone)]
 pub struct WsBinding<'a, 'input>(Node<'a, 'input>);
 
 impl<'a, 'input> WsBinding<'a, 'input> {
@@ -285,6 +354,19 @@ impl<'a, 'input> WsBinding<'a, 'input> {
                 WsErrorType::InvalidReference(port_name.to_string()),
             ))
     }
+
+    pub fn operations(&self) -> Result<impl Iterator<Item = WsBindingOperation>> {
+        Ok(self
+            .0
+            .children()
+            .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "operation")))
+            .map(|n| WsBindingOperation(n)))
+    }
+
+    /// Return the XML node this struct is associated with
+    pub fn node(&self) -> Node<'a, 'input> {
+        self.0
+    }
 }
 
 pub struct WsServicePort<'a, 'input>(Node<'a, 'input>);
@@ -299,12 +381,15 @@ impl<'a, 'input> WsServicePort<'a, 'input> {
 
     /// Fetch the binding information associated with this service port.
     pub fn binding(&self) -> Result<WsBinding<'a, 'input>> {
-        let binding_name = self.0.attribute("binding").ok_or(WsError::new(
+        let binding_typename = self.0.attribute("binding").ok_or(WsError::new(
             self.0,
             WsErrorType::MalformedWsdl(WsErrorMalformedType::MissingAttribute(
                 "binding".to_string(),
             )),
         ))?;
+
+        let (_binding_namespace, binding_name) =
+            split_qualified(binding_typename).map_err(|e| WsError::new(self.0, e))?;
 
         let wsdl = Wsdl::<'a, 'input>(self.0.document());
         wsdl.bindings()?
@@ -314,13 +399,18 @@ impl<'a, 'input> WsServicePort<'a, 'input> {
                 WsErrorType::InvalidReference(binding_name.to_string()),
             ))
     }
+
+    /// Return the XML node this struct is associated with
+    pub fn node(&self) -> Node<'a, 'input> {
+        self.0
+    }
 }
 
 /// A WSDL service, usually describing an HTTP endpoint that serves
 /// messages bound with a [WsBinding]
 pub struct WsService<'a, 'input>(Node<'a, 'input>);
 
-impl<'a> WsService<'a, '_> {
+impl<'a, 'input> WsService<'a, 'input> {
     pub fn name(&self) -> Result<&'a str> {
         self.0.attribute("name").ok_or(WsError::new(
             self.0,
@@ -332,8 +422,13 @@ impl<'a> WsService<'a, '_> {
         Ok(self
             .0
             .children()
-            .filter(|n| n.has_tag_name("port"))
+            .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "port")))
             .map(|n| WsServicePort(n)))
+    }
+
+    /// Return the XML node this struct is associated with
+    pub fn node(&self) -> Node<'a, 'input> {
+        self.0
     }
 }
 
@@ -348,7 +443,7 @@ impl<'a, 'input> Wsdl<'a, 'input> {
         self.0
             .root()
             .children()
-            .find(|n| n.has_tag_name("definitions"))
+            .find(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "definitions")))
             .ok_or(WsError::new(
                 self.0.root_element(),
                 WsErrorType::MalformedWsdl(WsErrorMalformedType::MissingElement(
@@ -362,7 +457,7 @@ impl<'a, 'input> Wsdl<'a, 'input> {
 
         Ok(definitions
             .children()
-            .filter(|n| n.has_tag_name("portType"))
+            .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "portType")))
             .map(|n| WsPortType(n))
             .into_iter())
     }
@@ -372,7 +467,7 @@ impl<'a, 'input> Wsdl<'a, 'input> {
 
         Ok(definitions
             .children()
-            .filter(|n| n.has_tag_name("message"))
+            .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "message")))
             .map(|n| WsMessage(n))
             .into_iter())
     }
@@ -382,7 +477,7 @@ impl<'a, 'input> Wsdl<'a, 'input> {
 
         Ok(definitions
             .children()
-            .filter(|n| n.has_tag_name("binding"))
+            .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "binding")))
             .map(|n| WsBinding(n))
             .into_iter())
     }
@@ -392,7 +487,7 @@ impl<'a, 'input> Wsdl<'a, 'input> {
 
         Ok(definitions
             .children()
-            .filter(|n| n.has_tag_name("service"))
+            .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "service")))
             .map(|n| WsService(n))
             .into_iter())
     }

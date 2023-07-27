@@ -1,4 +1,5 @@
 #![doc = include_str!("../README.md")]
+#![feature(try_find)]
 mod wsdl;
 
 pub use self::wsdl::{
