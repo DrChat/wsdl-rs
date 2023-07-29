@@ -463,6 +463,20 @@ impl<'a, 'input> WsService<'a, 'input> {
 }
 
 #[derive(Debug, Clone)]
+pub struct WsTypes<'a, 'input>(Node<'a, 'input>);
+
+impl<'a, 'input> WsTypes<'a, 'input> {
+    /// Return the schemas contained within. These are defined according to the XML schema specification,
+    /// and are out of scope for this library to interpret.
+    pub fn schemas(&self) -> Result<impl Iterator<Item = Node<'a, 'input>>> {
+        Ok(self
+            .0
+            .children()
+            .filter(|n| n.has_tag_name(("http://www.w3.org/2001/XMLSchema", "schema"))))
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct WsDefinitions<'a, 'input>(Node<'a, 'input>);
 
 impl<'a, 'input> WsDefinitions<'a, 'input> {
@@ -539,6 +553,15 @@ impl<'a, 'input> WsDefinitions<'a, 'input> {
             .children()
             .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "service")))
             .map(|n| WsService(n))
+            .into_iter())
+    }
+
+    pub fn types(&self) -> Result<impl Iterator<Item = Node<'a, 'input>>> {
+        // FIXME: I'm pretty sure only one of these nodes can exist?
+        Ok(self
+            .0
+            .children()
+            .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "types")))
             .into_iter())
     }
 }
