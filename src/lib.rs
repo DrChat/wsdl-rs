@@ -3,8 +3,8 @@
 mod wsdl;
 
 pub use self::wsdl::{
-    WsBinding, WsError, WsMessage, WsMessagePart, WsPortOperation, WsPortType, WsService,
-    WsServicePort, Wsdl,
+    WsBinding, WsDefinitions, WsError, WsMessage, WsMessagePart, WsPortOperation, WsPortType,
+    WsService, WsServicePort,
 };
 
 /// Re-export the roxmltree crate.

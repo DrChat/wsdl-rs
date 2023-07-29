@@ -241,9 +241,9 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
         let (_message_namespace, message_name) =
             split_qualified(message_typename).map_err(|e| WsError::new(self.0, e))?;
 
-        let wsdl = Wsdl::<'a, 'input>(self.0.document());
+        let def = WsDefinitions::find_parent(self.0)?;
         Ok(Some(
-            wsdl.messages()?
+            def.messages()?
                 .find(|n| n.0.attribute("name") == Some(message_name))
                 .ok_or(WsError::new(
                     self.0,
@@ -268,9 +268,9 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
         let (_message_namespace, message_name) =
             split_qualified(message_typename).map_err(|e| WsError::new(self.0, e))?;
 
-        let wsdl = Wsdl::<'a, 'input>(self.0.document());
+        let def = WsDefinitions::find_parent(self.0)?;
         Ok(Some(
-            wsdl.messages()?
+            def.messages()?
                 .find(|n| n.0.attribute("name") == Some(message_name))
                 .ok_or(WsError::new(
                     self.0,
@@ -295,9 +295,9 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
         let (_message_namespace, message_name) =
             split_qualified(message_typename).map_err(|e| WsError::new(self.0, e))?;
 
-        let wsdl = Wsdl::<'a, 'input>(self.0.document());
+        let def = WsDefinitions::find_parent(self.0)?;
         Ok(Some(
-            wsdl.messages()?
+            def.messages()?
                 .find(|n| n.0.attribute("name") == Some(message_name))
                 .ok_or(WsError::new(
                     self.0,
@@ -374,8 +374,8 @@ impl<'a, 'input> WsBinding<'a, 'input> {
         let (_port_namespace, port_name) =
             split_qualified(port_typename).map_err(|e| WsError::new(self.0, e))?;
 
-        let wsdl = Wsdl::<'a, 'input>(self.0.document());
-        wsdl.port_types()?
+        let def = WsDefinitions::find_parent(self.0)?;
+        def.port_types()?
             .find(|n| n.0.attribute("name") == Some(port_name))
             .ok_or(WsError::new(
                 self.0,
@@ -397,6 +397,7 @@ impl<'a, 'input> WsBinding<'a, 'input> {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct WsServicePort<'a, 'input>(Node<'a, 'input>);
 
 impl<'a, 'input> WsServicePort<'a, 'input> {
@@ -419,8 +420,8 @@ impl<'a, 'input> WsServicePort<'a, 'input> {
         let (_binding_namespace, binding_name) =
             split_qualified(binding_typename).map_err(|e| WsError::new(self.0, e))?;
 
-        let wsdl = Wsdl::<'a, 'input>(self.0.document());
-        wsdl.bindings()?
+        let def = WsDefinitions::find_parent(self.0)?;
+        def.bindings()?
             .find(|n| n.0.attribute("name") == Some(binding_name))
             .ok_or(WsError::new(
                 self.0,
@@ -436,6 +437,7 @@ impl<'a, 'input> WsServicePort<'a, 'input> {
 
 /// A WSDL service, usually describing an HTTP endpoint that serves
 /// messages bound with a [WsBinding]
+#[derive(Debug, Clone)]
 pub struct WsService<'a, 'input>(Node<'a, 'input>);
 
 impl<'a, 'input> WsService<'a, 'input> {
@@ -460,30 +462,53 @@ impl<'a, 'input> WsService<'a, 'input> {
     }
 }
 
-pub struct Wsdl<'a, 'input>(&'a Document<'input>);
+#[derive(Debug, Clone)]
+pub struct WsDefinitions<'a, 'input>(Node<'a, 'input>);
 
-impl<'a, 'input> Wsdl<'a, 'input> {
-    pub fn new(document: &'a Document<'input>) -> Self {
-        Self(document)
+impl<'a, 'input> WsDefinitions<'a, 'input> {
+    /// Find the definitions block from one of the node's parents
+    fn find_parent(mut node: Node<'a, 'input>) -> Result<'a, 'input, Self> {
+        loop {
+            node = node
+                .parent()
+                .ok_or(WsError::new(node, WsErrorType::NoParentNode))?;
+
+            if let Ok(definitions) = Self::from_node(node) {
+                return Ok(definitions);
+            }
+        }
     }
 
-    fn definitions(&self) -> Result<Node<'a, 'input>> {
-        self.0
-            .root()
-            .children()
-            .find(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "definitions")))
-            .ok_or(WsError::new(
-                self.0.root_element(),
+    pub fn from_node(node: Node<'a, 'input>) -> Result<'a, 'input, Self> {
+        if node.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "definitions")) {
+            Ok(Self(node))
+        } else {
+            Err(WsError::new(
+                node,
                 WsErrorType::MalformedWsdl(WsErrorMalformedType::MissingElement(
                     "definitions".to_string(),
                 )),
             ))
+        }
+    }
+
+    pub fn from_document(document: &'a Document<'input>) -> Result<'a, 'input, Self> {
+        document
+            .root()
+            .children()
+            .find(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "definitions")))
+            .ok_or(WsError::new(
+                document.root_element(),
+                WsErrorType::MalformedWsdl(WsErrorMalformedType::MissingElement(
+                    "definitions".to_string(),
+                )),
+            ))
+            .map(|n| Self(n))
     }
 
     pub fn port_types(&self) -> Result<impl Iterator<Item = WsPortType<'a, 'input>>> {
-        let definitions = self.definitions()?;
-
-        Ok(definitions
+        Ok(self
+            .0
             .children()
             .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "portType")))
             .map(|n| WsPortType(n))
@@ -491,9 +516,8 @@ impl<'a, 'input> Wsdl<'a, 'input> {
     }
 
     pub fn messages(&self) -> Result<impl Iterator<Item = WsMessage<'a, 'input>>> {
-        let definitions = self.definitions()?;
-
-        Ok(definitions
+        Ok(self
+            .0
             .children()
             .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "message")))
             .map(|n| WsMessage(n))
@@ -501,9 +525,8 @@ impl<'a, 'input> Wsdl<'a, 'input> {
     }
 
     pub fn bindings(&self) -> Result<impl Iterator<Item = WsBinding<'a, 'input>>> {
-        let definitions = self.definitions()?;
-
-        Ok(definitions
+        Ok(self
+            .0
             .children()
             .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "binding")))
             .map(|n| WsBinding(n))
@@ -511,9 +534,8 @@ impl<'a, 'input> Wsdl<'a, 'input> {
     }
 
     pub fn services(&self) -> Result<impl Iterator<Item = WsService<'a, 'input>>> {
-        let definitions = self.definitions()?;
-
-        Ok(definitions
+        Ok(self
+            .0
             .children()
             .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "service")))
             .map(|n| WsService(n))

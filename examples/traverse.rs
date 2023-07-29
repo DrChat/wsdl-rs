@@ -1,5 +1,5 @@
 use clap::{Arg, Command};
-use wsdl::Wsdl;
+use wsdl::WsDefinitions;
 
 fn main() -> anyhow::Result<()> {
     let matches = Command::new("WSDL tree traversal example")
@@ -14,12 +14,12 @@ fn main() -> anyhow::Result<()> {
     let input = std::fs::read_to_string(&input)?;
     let document = roxmltree::Document::parse(&input)?;
 
-    let wsdl = Wsdl::new(&document);
-    for service in wsdl.services()? {
+    let wsdef = WsDefinitions::from_document(&document)?;
+    for service in wsdef.services()? {
         println!("Service: {}", service.name()?);
     }
 
-    for binding in wsdl.bindings()? {
+    for binding in wsdef.bindings()? {
         println!(
             "Binding: {} -> {}",
             binding.name()?,
@@ -27,7 +27,7 @@ fn main() -> anyhow::Result<()> {
         );
     }
 
-    for port_type in wsdl.port_types()? {
+    for port_type in wsdef.port_types()? {
         println!("Port: {}", port_type.name()?);
 
         for operation in port_type.operations()? {

@@ -13,7 +13,7 @@ fn example() -> Result<()> {
     let input = std::fs::read_to_string("/path/to/my/service.wsdl")?;
     let document = roxmltree::Document::parse(&input)?;
 
-    let wsdl = Wsdl::new(&document);
+    let wsdl = WsDefinitions::from_document(&document)?;
     for service in wsdl.services()? {
         println!("Service: {}", service.name()?);
     }
