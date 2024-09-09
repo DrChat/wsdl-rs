@@ -279,6 +279,29 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
         ))
     }
 
+    /// Retrieve all output messages for this port
+    pub fn outputs(&self) -> Result<impl Iterator<Item=WsMessage<'a, 'input>>> {
+        let def = WsDefinitions::find_parent(self.0)?;
+        Ok(self
+           .0
+           .children()
+           .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "output")))
+           .filter_map(|n| Some((n.attribute("name")?, n.attribute("message")?)))
+           .filter_map(|(name, message_typename)| match split_qualified(message_typename) {
+               Ok((_message_namespace, message_name)) => Some((name, message_name)),
+               Err(_) => None
+           }).filter_map(move |(name, message_name)| {
+            let Ok(mut messages) = def.messages() else {
+                return None;
+            };
+            if let Some(message) = messages.find(|n| n.0.attribute("name") == Some(message_name)) {
+                Some(message)
+            } else {
+                None
+            }
+        }))
+    }
+
     /// Retrieve the first fault message for this port.
     pub fn fault(&self) -> Result<Option<WsMessage<'a, 'input>>> {
         let message_typename = match self
