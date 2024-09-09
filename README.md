@@ -7,7 +7,7 @@ Rust newtypes to expose a native interface for reading WSDL files.
 ## Usage
 ```rust
 # use anyhow::Result;
-use wsdl::Wsdl;
+use wsdl::WsDefinitions;
 
 fn example() -> Result<()> {
     let input = std::fs::read_to_string("/path/to/my/service.wsdl")?;
