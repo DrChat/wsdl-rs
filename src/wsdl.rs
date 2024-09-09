@@ -259,11 +259,11 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
         if outputs.next().is_some() {
             panic!("Multiple output messages found for operation {:?}", self.name()?);
         }
-         Ok(output)
+         Ok(output.map(|(_, m)| m))
     }
 
     /// Retrieve all output messages for this port
-    pub fn outputs(&self) -> Result<impl Iterator<Item=WsMessage<'a, 'input>>> {
+    pub fn outputs(&self) -> Result<impl Iterator<Item=(&'a str, WsMessage<'a, 'input>)>> {
         let def = WsDefinitions::find_parent(self.0)?;
         Ok(self
            .0
@@ -278,7 +278,7 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
                 return None;
             };
             if let Some(message) = messages.find(|n| n.0.attribute("name") == Some(message_name)) {
-                Some(message)
+                Some((name, message))
             } else {
                 None
             }
@@ -292,11 +292,11 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
         if faults.next().is_some() {
             panic!("Multiple fault messages found for operation {:?}", self.name()?);
         }
-        Ok(fault)
+        Ok(fault.map(|(_, m)| m))
     }
 
     /// Retrieve all fault messages for this port
-    pub fn faults(&self) -> Result<impl Iterator<Item=WsMessage<'a, 'input>>> {
+    pub fn faults(&self) -> Result<impl Iterator<Item=(&'a str, WsMessage<'a, 'input>)>> {
         let def = WsDefinitions::find_parent(self.0)?;
         Ok(self
            .0
@@ -311,7 +311,7 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
                 return None;
             };
             if let Some(message) = messages.find(|n| n.0.attribute("name") == Some(message_name)) {
-                Some(message)
+                Some((name, message))
             } else {
                 None
             }
