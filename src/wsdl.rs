@@ -254,29 +254,12 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
 
     /// Retrieve the output message for this port.
     pub fn output(&self) -> Result<Option<WsMessage<'a, 'input>>> {
-        let message_typename = match self
-            .0
-            .children()
-            .find(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "output")))
-            .map(|n| n.attribute("message"))
-            .flatten()
-        {
-            Some(n) => n,
-            None => return Ok(None),
-        };
-
-        let (_message_namespace, message_name) =
-            split_qualified(message_typename).map_err(|e| WsError::new(self.0, e))?;
-
-        let def = WsDefinitions::find_parent(self.0)?;
-        Ok(Some(
-            def.messages()?
-                .find(|n| n.0.attribute("name") == Some(message_name))
-                .ok_or(WsError::new(
-                    self.0,
-                    WsErrorType::InvalidReference(message_name.to_string()),
-                ))?,
-        ))
+        let mut outputs = self.outputs()?;
+        let output = outputs.next();
+        if outputs.next().is_some() {
+            panic!("Multiple output messages found for operation {:?}", self.name()?);
+        }
+         Ok(output)
     }
 
     /// Retrieve all output messages for this port
@@ -304,29 +287,12 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
 
     /// Retrieve the first fault message for this port.
     pub fn fault(&self) -> Result<Option<WsMessage<'a, 'input>>> {
-        let message_typename = match self
-            .0
-            .children()
-            .find(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "fault")))
-            .map(|n| n.attribute("message"))
-            .flatten()
-        {
-            Some(n) => n,
-            None => return Ok(None),
-        };
-
-        let (_message_namespace, message_name) =
-            split_qualified(message_typename).map_err(|e| WsError::new(self.0, e))?;
-
-        let def = WsDefinitions::find_parent(self.0)?;
-        Ok(Some(
-            def.messages()?
-                .find(|n| n.0.attribute("name") == Some(message_name))
-                .ok_or(WsError::new(
-                    self.0,
-                    WsErrorType::InvalidReference(message_name.to_string()),
-                ))?,
-        ))
+        let mut faults = self.faults()?;
+        let fault = faults.next();
+        if faults.next().is_some() {
+            panic!("Multiple fault messages found for operation {:?}", self.name()?);
+        }
+        Ok(fault)
     }
 
     /// Retrieve all fault messages for this port
