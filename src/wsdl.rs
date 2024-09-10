@@ -262,8 +262,8 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
          Ok(output.map(|(_, m)| m))
     }
 
-    /// Retrieve all output messages for this port
-    pub fn outputs(&self) -> Result<impl Iterator<Item=(&'a str, WsMessage<'a, 'input>)>> {
+    /// Only a single output is allowed to exist so this is non-public.
+    fn outputs(&self) -> Result<impl Iterator<Item=(&'a str, WsMessage<'a, 'input>)>> {
         let def = WsDefinitions::find_parent(self.0)?;
         Ok(self
            .0
