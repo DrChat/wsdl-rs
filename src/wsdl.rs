@@ -9,6 +9,8 @@ pub enum WsErrorMalformedType {
     MissingAttribute(String),
     #[error("missing element \"{0}\"")]
     MissingElement(String),
+    #[error("too many elements \"{0}\"")]
+    TooManyElements(String),
 }
 
 #[derive(Error, Debug)]
@@ -227,39 +229,49 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
 
     /// Retrieve the input message for this port.
     pub fn input(&self) -> Result<Option<WsMessage<'a, 'input>>> {
-        let message_typename = match self
-            .0
-            .children()
-            .find(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "input")))
-            .map(|n| n.attribute("message"))
-            .flatten()
-        {
-            Some(n) => n,
-            None => return Ok(None),
+        let mut inputs = self.inputs()?;
+        let Some(input) = inputs.next() else {
+            return Ok(None);
         };
+        if let Some((name, extra)) = inputs.next() {
+            return Err(WsError::new(extra.node(), WsErrorType::MalformedWsdl(WsErrorMalformedType::TooManyElements(format!("extra `inputs` element of: {name}")))))
+        }
+        Ok(Some(input.1))
+    }
 
-        let (_message_namespace, message_name) =
-            split_qualified(message_typename).map_err(|e| WsError::new(self.0, e))?;
-
+    /// Only a single input is allowed to exist so this is non-public.
+    fn inputs(&self) -> Result<impl Iterator<Item=(&'a str, WsMessage<'a, 'input>)>> {
         let def = WsDefinitions::find_parent(self.0)?;
-        Ok(Some(
-            def.messages()?
-                .find(|n| n.0.attribute("name") == Some(message_name))
-                .ok_or(WsError::new(
-                    self.0,
-                    WsErrorType::InvalidReference(message_name.to_string()),
-                ))?,
-        ))
+        Ok(self
+           .0
+           .children()
+           .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "input")))
+           .filter_map(|n| Some((n.attribute("name")?, n.attribute("message")?)))
+           .filter_map(|(name, message_typename)| match split_qualified(message_typename) {
+               Ok((_message_namespace, message_name)) => Some((name, message_name)),
+               Err(_) => None
+           }).filter_map(move |(name, message_name)| {
+            let Ok(mut messages) = def.messages() else {
+                return None;
+            };
+            if let Some(message) = messages.find(|n| n.0.attribute("name") == Some(message_name)) {
+                Some((name, message))
+            } else {
+                None
+            }
+        }))
     }
 
     /// Retrieve the output message for this port.
     pub fn output(&self) -> Result<Option<WsMessage<'a, 'input>>> {
         let mut outputs = self.outputs()?;
-        let output = outputs.next();
-        if outputs.next().is_some() {
-            panic!("Multiple output messages found for operation {:?}", self.name()?);
+        let Some(output) = outputs.next() else {
+            return Ok(None);
+        };
+        if let Some((name, extra)) = outputs.next() {
+            return Err(WsError::new(extra.node(), WsErrorType::MalformedWsdl(WsErrorMalformedType::TooManyElements(format!("extra `output` element of: {name}")))))
         }
-         Ok(output.map(|(_, m)| m))
+        Ok(Some(output.1))
     }
 
     /// Only a single output is allowed to exist so this is non-public.
