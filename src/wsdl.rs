@@ -128,7 +128,7 @@ impl<'a, 'input> WsMessage<'a, 'input> {
     }
 
     /// Retrieve the parts of this message.
-    pub fn parts(&self) -> impl Iterator<Item = WsMessagePart> {
+    pub fn parts(&self) -> impl Iterator<Item = WsMessagePart<'a, 'input>> {
         self.0
             .children()
             .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "part")))
