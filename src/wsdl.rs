@@ -335,14 +335,16 @@ impl<'a, 'input> WsBindingOperation<'a, 'input> {
         );
 
         let port_type: WsPortType<'a, 'input> = binding.port_type()?;
-        let mut operations = port_type.operations()?;
 
-        operations
-            .try_find(|o| Ok(o.name()? == name))?
-            .ok_or(WsError::new(
-                self.0,
-                WsErrorType::MalformedWsdl(WsErrorMalformedType::MissingElement(name.to_string())),
-            ))
+        for op in port_type.operations()? {
+            if op.name()? == name {
+                return Ok(op);
+            }
+        }
+        Err(WsError::new(
+            self.0,
+            WsErrorType::MalformedWsdl(WsErrorMalformedType::MissingElement(name.to_string())),
+        ))
     }
 
     /// Return the XML node this struct is associated with
