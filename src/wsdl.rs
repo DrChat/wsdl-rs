@@ -234,32 +234,42 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
             return Ok(None);
         };
         if let Some((name, extra)) = inputs.next() {
-            return Err(WsError::new(extra.node(), WsErrorType::MalformedWsdl(WsErrorMalformedType::TooManyElements(format!("extra `inputs` element of: {name}")))))
+            return Err(WsError::new(
+                extra.node(),
+                WsErrorType::MalformedWsdl(WsErrorMalformedType::TooManyElements(format!(
+                    "extra `inputs` element of: {name}"
+                ))),
+            ));
         }
         Ok(Some(input.1))
     }
 
     /// Only a single input is allowed to exist so this is non-public.
-    fn inputs(&self) -> Result<impl Iterator<Item=(&'a str, WsMessage<'a, 'input>)>> {
+    fn inputs(&self) -> Result<impl Iterator<Item = (&'a str, WsMessage<'a, 'input>)>> {
         let def = WsDefinitions::find_parent(self.0)?;
         Ok(self
-           .0
-           .children()
-           .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "input")))
-           .filter_map(|n| Some((n.attribute("name")?, n.attribute("message")?)))
-           .filter_map(|(name, message_typename)| match split_qualified(message_typename) {
-               Ok((_message_namespace, message_name)) => Some((name, message_name)),
-               Err(_) => None
-           }).filter_map(move |(name, message_name)| {
-            let Ok(mut messages) = def.messages() else {
-                return None;
-            };
-            if let Some(message) = messages.find(|n| n.0.attribute("name") == Some(message_name)) {
-                Some((name, message))
-            } else {
-                None
-            }
-        }))
+            .0
+            .children()
+            .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "input")))
+            .filter_map(|n| Some((n.attribute("name")?, n.attribute("message")?)))
+            .filter_map(
+                |(name, message_typename)| match split_qualified(message_typename) {
+                    Ok((_message_namespace, message_name)) => Some((name, message_name)),
+                    Err(_) => None,
+                },
+            )
+            .filter_map(move |(name, message_name)| {
+                let Ok(mut messages) = def.messages() else {
+                    return None;
+                };
+                if let Some(message) =
+                    messages.find(|n| n.0.attribute("name") == Some(message_name))
+                {
+                    Some((name, message))
+                } else {
+                    None
+                }
+            }))
     }
 
     /// Retrieve the output message for this port.
@@ -269,32 +279,42 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
             return Ok(None);
         };
         if let Some((name, extra)) = outputs.next() {
-            return Err(WsError::new(extra.node(), WsErrorType::MalformedWsdl(WsErrorMalformedType::TooManyElements(format!("extra `output` element of: {name}")))))
+            return Err(WsError::new(
+                extra.node(),
+                WsErrorType::MalformedWsdl(WsErrorMalformedType::TooManyElements(format!(
+                    "extra `output` element of: {name}"
+                ))),
+            ));
         }
         Ok(Some(output.1))
     }
 
     /// Only a single output is allowed to exist so this is non-public.
-    fn outputs(&self) -> Result<impl Iterator<Item=(&'a str, WsMessage<'a, 'input>)>> {
+    fn outputs(&self) -> Result<impl Iterator<Item = (&'a str, WsMessage<'a, 'input>)>> {
         let def = WsDefinitions::find_parent(self.0)?;
         Ok(self
-           .0
-           .children()
-           .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "output")))
-           .filter_map(|n| Some((n.attribute("name")?, n.attribute("message")?)))
-           .filter_map(|(name, message_typename)| match split_qualified(message_typename) {
-               Ok((_message_namespace, message_name)) => Some((name, message_name)),
-               Err(_) => None
-           }).filter_map(move |(name, message_name)| {
-            let Ok(mut messages) = def.messages() else {
-                return None;
-            };
-            if let Some(message) = messages.find(|n| n.0.attribute("name") == Some(message_name)) {
-                Some((name, message))
-            } else {
-                None
-            }
-        }))
+            .0
+            .children()
+            .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "output")))
+            .filter_map(|n| Some((n.attribute("name")?, n.attribute("message")?)))
+            .filter_map(
+                |(name, message_typename)| match split_qualified(message_typename) {
+                    Ok((_message_namespace, message_name)) => Some((name, message_name)),
+                    Err(_) => None,
+                },
+            )
+            .filter_map(move |(name, message_name)| {
+                let Ok(mut messages) = def.messages() else {
+                    return None;
+                };
+                if let Some(message) =
+                    messages.find(|n| n.0.attribute("name") == Some(message_name))
+                {
+                    Some((name, message))
+                } else {
+                    None
+                }
+            }))
     }
 
     /// Retrieve the first fault message for this port.
@@ -302,32 +322,40 @@ impl<'a, 'input> WsPortOperation<'a, 'input> {
         let mut faults = self.faults()?;
         let fault = faults.next();
         if faults.next().is_some() {
-            panic!("Multiple fault messages found for operation {:?}", self.name()?);
+            panic!(
+                "Multiple fault messages found for operation {:?}",
+                self.name()?
+            );
         }
         Ok(fault.map(|(_, m)| m))
     }
 
     /// Retrieve all fault messages for this port
-    pub fn faults(&self) -> Result<impl Iterator<Item=(&'a str, WsMessage<'a, 'input>)>> {
+    pub fn faults(&self) -> Result<impl Iterator<Item = (&'a str, WsMessage<'a, 'input>)>> {
         let def = WsDefinitions::find_parent(self.0)?;
         Ok(self
-           .0
-           .children()
-           .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "fault")))
-           .filter_map(|n| Some((n.attribute("name")?, n.attribute("message")?)))
-           .filter_map(|(name, message_typename)| match split_qualified(message_typename) {
-               Ok((_message_namespace, message_name)) => Some((name, message_name)),
-               Err(_) => None
-           }).filter_map(move |(name, message_name)| {
-            let Ok(mut messages) = def.messages() else {
-                return None;
-            };
-            if let Some(message) = messages.find(|n| n.0.attribute("name") == Some(message_name)) {
-                Some((name, message))
-            } else {
-                None
-            }
-        }))
+            .0
+            .children()
+            .filter(|n| n.has_tag_name(("http://schemas.xmlsoap.org/wsdl/", "fault")))
+            .filter_map(|n| Some((n.attribute("name")?, n.attribute("message")?)))
+            .filter_map(
+                |(name, message_typename)| match split_qualified(message_typename) {
+                    Ok((_message_namespace, message_name)) => Some((name, message_name)),
+                    Err(_) => None,
+                },
+            )
+            .filter_map(move |(name, message_name)| {
+                let Ok(mut messages) = def.messages() else {
+                    return None;
+                };
+                if let Some(message) =
+                    messages.find(|n| n.0.attribute("name") == Some(message_name))
+                {
+                    Some((name, message))
+                } else {
+                    None
+                }
+            }))
     }
 
     /// Return the XML node this struct is associated with
